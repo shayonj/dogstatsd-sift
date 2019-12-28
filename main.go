@@ -77,6 +77,8 @@ func main() {
 
 	if cfg == nil {
 		log.Warn("No config found. Moving on with defaults")
+	} else {
+		log.Warn("Config file found and loaded")
 	}
 
 	remote, err := url.Parse(origin)

@@ -89,6 +89,8 @@ func HandleRequest(r *http.Request, log *logrus.Entry, cfg *configuration.Base) 
 
 	r.Body = ioutil.NopCloser(bytes.NewBuffer(innflatedPayload))
 	r.ContentLength = int64(len(innflatedPayload))
+
+	log.Infof("Modified request payload.")
 }
 
 func deflate(body []byte) (reqPayload *RequestSeriesPayload, e error) {

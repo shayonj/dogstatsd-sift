@@ -16,3 +16,5 @@
 
 # misc
 *.log
+
+_local.test.yml
