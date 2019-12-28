@@ -1,0 +1,21 @@
+
+metrics:
+  -
+    name: "something"
+    remove_metric: true # removes the entire metric line from payload, altogether.
+    remove_tags: # removes tags from the respective metric line in the payload.
+      - "some-tags"
+      - ""
+    remove_host: true # removes host from the respective metric line in the payload.
+  -
+    name: "something"
+    remove_metric: true # removes the entire metric line from payload, altogether.
+    remove_tags: # removes tags from the respective metric line in the payload.
+      - "some-tags"
+      - ""
+    remove_host: true # removes host from the respective metric line in the payload.
+
+
+no_host_tags: true
+
+port: 9000 # port to dogstatsd-sift on
