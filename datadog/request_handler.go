@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 
 	"github.com/shayonj/dogstatsd-sift/configuration"
 	"github.com/sirupsen/logrus"
@@ -90,7 +91,7 @@ func HandleRequest(r *http.Request, log *logrus.Entry, cfg *configuration.Base) 
 	r.Body = ioutil.NopCloser(bytes.NewBuffer(innflatedPayload))
 	r.ContentLength = int64(len(innflatedPayload))
 
-	log.Infof("Modified request payload.")
+	log.WithField("content_size", r.ContentLength).Info("Modified request payload.")
 }
 
 func deflate(body []byte) (reqPayload *RequestSeriesPayload, e error) {
@@ -125,7 +126,7 @@ func mutate(reqPayload *RequestSeriesPayload, cfg *configuration.Base) error {
 
 			// Handle removal of metric
 			if metricConfig.RemoveMetric {
-				reqPayload.Series = removeMetric(reqPayload.Series, i)
+				removeItem(&reqPayload.Series, i)
 				continue
 			}
 
@@ -150,22 +151,21 @@ func mutate(reqPayload *RequestSeriesPayload, cfg *configuration.Base) error {
 	return nil
 }
 
-func removeMetric(s []Metric, i int) []Metric {
-	return append(s[:i], s[i+1:]...)
-}
-
 func handleTags(configTags []string, metricTags []string) []string {
 	for i, tag := range metricTags {
 		if containsTag(configTags, tag) {
-			metricTags = removeTags(metricTags, i)
+			removeItem(&metricTags, i)
 		}
 	}
 
 	return metricTags
 }
 
-func removeTags(s []string, i int) []string {
-	return append(s[:i], s[i+1:]...)
+func removeItem(sp interface{}, i int) {
+	slicePtr := reflect.ValueOf(sp)
+	slice := slicePtr.Elem()
+
+	slice.Set(reflect.AppendSlice(slice.Slice(0, i), slice.Slice(i+1, slice.Len())))
 }
 
 func containsTag(s []string, e string) bool {
