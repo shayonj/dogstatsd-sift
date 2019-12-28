@@ -10,5 +10,5 @@ dfsdfsd:
     remove_host: true # removes host from the respective metric line in the payload.
 
 
-no_host_tags: true
+remove_all_host: true
 port: 9000 # port to dogstatsd-sift on

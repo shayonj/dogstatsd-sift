@@ -1,4 +1,4 @@
-no_host_tags: false # (default: false)
+remove_all_host: false # When true overrides Host for all metrics (default: false)
 port: 9000 # port to host dogstatsd-sift on (default: 9000)
 metrics:
   -
