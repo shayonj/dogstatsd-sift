@@ -49,6 +49,10 @@ type RequestSeriesPayload struct {
 // modify and then encode back request in the way it was received, with the
 // modified values, so it can be proxied back to the origin.
 func HandleRequest(r *http.Request, log *logrus.Entry, cfg *configuration.Base) {
+	if cfg == nil {
+		log.Warn("No config found. Skipping request.")
+	}
+
 	if r.URL.Path != OriginAPIEndpoint {
 		return
 	}

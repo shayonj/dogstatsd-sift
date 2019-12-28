@@ -44,11 +44,11 @@ func parseConfig() (*configuration.Base, error) {
 }
 
 func port(cfg *configuration.Base) string {
-	if strconv.Itoa(cfg.Port) != "" {
-		return ":" + strconv.Itoa(cfg.Port)
+	if cfg == nil {
+		return ":9000"
 	}
 
-	return ":9000"
+	return ":" + strconv.Itoa(cfg.Port)
 }
 
 func logFields(r *http.Request) log.Fields {
@@ -74,7 +74,10 @@ func main() {
 		log.Errorf("Failed to parse config %s", err)
 		panic(err)
 	}
-	log.Infof("Configuration parsed successfully")
+
+	if cfg == nil {
+		log.Warn("No config found. Moving on with defaults")
+	}
 
 	remote, err := url.Parse(origin)
 	if err != nil {
