@@ -52,6 +52,7 @@ func HandleRequest(r *http.Request, log *logrus.Entry, cfg *configuration.Base) 
 	if r.URL.Path != OriginAPIEndpoint {
 		return
 	}
+
 	if r.Header.Get(ContentEncodingHeader) != ContentEncoding {
 		return
 	}
@@ -68,13 +69,12 @@ func HandleRequest(r *http.Request, log *logrus.Entry, cfg *configuration.Base) 
 		return
 	}
 
-	var reqPayload RequestSeriesPayload
-	if err := mutate(&enflatedPayload, &reqPayload); err != nil {
+	if err := mutate(enflatedPayload, cfg); err != nil {
 		log.Error(err)
 		return
 	}
 
-	innflatedPayload, err := inflate(&reqPayload)
+	innflatedPayload, err := inflate(enflatedPayload)
 	if err != nil {
 		log.Error(err)
 		return
@@ -84,7 +84,7 @@ func HandleRequest(r *http.Request, log *logrus.Entry, cfg *configuration.Base) 
 	r.ContentLength = int64(len(innflatedPayload))
 }
 
-func deflate(body []byte) ([]byte, error) {
+func deflate(body []byte) (reqPayload *RequestSeriesPayload, e error) {
 	decompressedReader, err := zlib.NewReader(bytes.NewReader(body))
 	if err != nil {
 		return nil, err
@@ -96,20 +96,44 @@ func deflate(body []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	return enflated, nil
-}
-
-func mutate(enflated *[]byte, reqPayload *RequestSeriesPayload) error {
-	if err := json.Unmarshal(*enflated, &reqPayload); err != nil {
-		return err
+	if err := json.Unmarshal(enflated, &reqPayload); err != nil {
+		return nil, err
 	}
 
+	return reqPayload, nil
+}
+
+func mutate(reqPayload *RequestSeriesPayload, cfg *configuration.Base) error {
 	for i := 0; i < len(reqPayload.Series); i++ {
 		metric := &reqPayload.Series[i]
-		metric.Host = "dogstatsd-sift"
+
+		for j := 0; j < len(cfg.Metrics); j++ {
+			mcfg := cfg.Metrics[j]
+
+			if mcfg.RemoveMetric {
+				reqPayload.Series = remove(reqPayload.Series, i)
+				continue
+			}
+
+			if mcfg.Name == metric.Metric {
+				if mcfg.RemoveHost {
+					metric.Host = "dogstatsd-sift"
+				}
+
+				// TODO: filter tags based on mcfg.Tags
+			}
+		}
+
+		if cfg.RemoveAllHost {
+			metric.Host = "dogstatsd-sift"
+		}
 	}
 
 	return nil
+}
+
+func remove(slice []Metric, s int) []Metric {
+	return append(slice[:s], slice[s+1:]...)
 }
 
 func inflate(reqPayload *RequestSeriesPayload) ([]byte, error) {
