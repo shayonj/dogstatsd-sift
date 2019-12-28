@@ -1,17 +1,20 @@
 package main
 
 import (
+	"flag"
 	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"strconv"
+
+	"github.com/shayonj/dogstatsd-sift/configuration"
 
 	"github.com/shayonj/dogstatsd-sift/datadog"
 	log "github.com/sirupsen/logrus"
 )
 
-const port = ":9000"
 const origin = "https://app.datadoghq.com"
 const logFileName = "dogstatsd_sift_request.log"
 
@@ -26,8 +29,26 @@ func setupLog() {
 	} else {
 		log.Info("Failed to log to file, using default stdout")
 	}
+}
 
-	log.Infof("Starting server. Listening on %s", port)
+func parseConfig() (*configuration.Base, error) {
+	configFile := flag.String("config-file", "", "config file location")
+	flag.Parse()
+
+	if *configFile != "" {
+		c, err := configuration.Parse(*configFile)
+		return c, err
+	}
+
+	return nil, nil
+}
+
+func port(cfg *configuration.Base) string {
+	if strconv.Itoa(cfg.Port) != "" {
+		return ":" + strconv.Itoa(cfg.Port)
+	}
+
+	return ":9000"
 }
 
 func logFields(r *http.Request) log.Fields {
@@ -48,14 +69,26 @@ func logFields(r *http.Request) log.Fields {
 func main() {
 	setupLog()
 
+	cfg, err := parseConfig()
+	if err != nil {
+		log.Errorf("Failed to parse config %s", err)
+		panic(err)
+	}
+	log.Infof("Configuration parsed successfully")
+
 	remote, err := url.Parse(origin)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		panic(err)
 	}
 
 	proxy := httputil.NewSingleHostReverseProxy(remote)
-	http.HandleFunc("/", handler(proxy))
-	log.Fatal(http.ListenAndServe(port, nil))
+	http.HandleFunc("/", handler(proxy, cfg))
+
+	portOn := port(cfg)
+	log.Infof("Starting server. Listening on %s", portOn)
+
+	log.Fatal(http.ListenAndServe(portOn, nil))
 }
 
 func handler(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
