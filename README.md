@@ -4,7 +4,20 @@ Small reverse proxy that sits between Datadog statsD agent and Datadog API. The 
 
 Dogstatsd-sift works best when used datadog-agent as a proxy. More on setup below.
 
-Supports Datadog API V1.
+## Requirements
+
+### Runtime
+Datadog agent: 6.x or 7.x
+
+### Local
+Go: 1.9+
+
+## Overhead
+
+- CPU: <1%
+- Mem/RSS: ~40MB
+
+Note: Works Datadog API V1 (`/api/v1/series`) payload type.
 
 ## Setup
 
@@ -22,11 +35,16 @@ dd_url: http://localhost:9000 (or dogstatsd-sift is running on)
 ```
 
 ## Run
+```
+dogstatsd-sift --config-file="example.yml"
+```
+
+Binary from releases: https://github.com/shayonj/dogstatsd-sift/releases
+
+or if `$GOPATH/bin` is added to `PATH`
 
 ```
 go get github.com/shayonj/dogstatsd-sift
-
-dogstatsd-sift --config-file="example.yml"
 ```
 
 ## Configuration
@@ -34,7 +52,7 @@ dogstatsd-sift --config-file="example.yml"
 By passing a set of static configuration its easy to control the metrics/tags/host combination being sent out. Based on the static configuration ([example.yml](example.yml)) `dogstatsd-sift` modifies payload on the fly. Currently possible operations/tasks include:
 
 - Selectively remove tags from specified metric(s)
-- Selective override/disable `Host` from specified metric(s)
+- Selectively override/disable `Host` from specified metric(s)
 - Globally override/disable `Host` from any metric(s)
 
 ## Logging
