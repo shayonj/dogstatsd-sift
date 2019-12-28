@@ -11,6 +11,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// HostOverride is the default value for Host in a Mt
+const HostOverride = "dogstatsd-sift"
+
 // OriginAPIEndpoint is the datadog endpoint
 // to proxy request back to
 const OriginAPIEndpoint = "/api/v1/series"
@@ -112,32 +115,64 @@ func mutate(reqPayload *RequestSeriesPayload, cfg *configuration.Base) error {
 		metric := &reqPayload.Series[i]
 
 		for j := 0; j < len(cfg.Metrics); j++ {
-			mcfg := cfg.Metrics[j]
+			metricConfig := cfg.Metrics[j]
 
-			if mcfg.RemoveMetric {
-				reqPayload.Series = remove(reqPayload.Series, i)
+			if metricConfig.Name != metric.Metric {
 				continue
 			}
 
-			if mcfg.Name == metric.Metric {
-				if mcfg.RemoveHost {
-					metric.Host = "dogstatsd-sift"
-				}
-
-				// TODO: filter tags based on mcfg.Tags
+			// Handle removal of metric
+			if metricConfig.RemoveMetric {
+				reqPayload.Series = removeMetric(reqPayload.Series, i)
+				continue
 			}
+
+			// Handle removal of tags
+			if len(metricConfig.RemoveTags) > 0 {
+				metric.Tags = handleTags(metricConfig.RemoveTags, metric.Tags)
+			}
+
+			// Handle host override
+			if metricConfig.RemoveHost {
+				metric.Host = HostOverride
+			}
+
 		}
 
+		// Handle global host override for all metrics
 		if cfg.RemoveAllHost {
-			metric.Host = "dogstatsd-sift"
+			metric.Host = HostOverride
 		}
 	}
 
 	return nil
 }
 
-func remove(slice []Metric, s int) []Metric {
-	return append(slice[:s], slice[s+1:]...)
+func removeMetric(s []Metric, i int) []Metric {
+	return append(s[:i], s[i+1:]...)
+}
+
+func handleTags(configTags []string, metricTags []string) []string {
+	for i, tag := range metricTags {
+		if containsTag(configTags, tag) {
+			metricTags = removeTags(metricTags, i)
+		}
+	}
+
+	return metricTags
+}
+
+func removeTags(s []string, i int) []string {
+	return append(s[:i], s[i+1:]...)
+}
+
+func containsTag(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
 }
 
 func inflate(reqPayload *RequestSeriesPayload) ([]byte, error) {

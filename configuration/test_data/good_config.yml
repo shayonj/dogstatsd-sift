@@ -4,7 +4,7 @@ metrics:
     name: "request.200"
     remove_metric: true # removes the entire metric line from payload, altogether.
     remove_tags: # removes tags from the respective metric line in the payload.
-      - "some-tags"
+      - "some_tags:true"
     remove_host: true # removes host from the respective metric line in the payload.
 
 remove_all_host: true

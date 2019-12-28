@@ -21,7 +21,7 @@ func TestParseValidFile(t *testing.T) {
 			{
 				Name:         "request.200",
 				RemoveMetric: true,
-				RemoveTags:   []string{"some-tags"},
+				RemoveTags:   []string{"some_tags:true"},
 				RemoveHost:   true,
 			},
 		},
