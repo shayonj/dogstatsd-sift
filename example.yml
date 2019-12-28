@@ -1,21 +1,17 @@
-
+no_host_tags: false # (default: false)
+port: 9000 # port to host dogstatsd-sift on (default: 9000)
 metrics:
   -
-    name: "something"
+    name: "http.request"
     remove_metric: true # removes the entire metric line from payload, altogether.
     remove_tags: # removes tags from the respective metric line in the payload.
-      - "some-tags"
-      - ""
-    remove_host: true # removes host from the respective metric line in the payload.
+      - "some_tags:true"
+      - "status:true"
+    remove_host: true # removes host from the respective metric line in the payload (default: false).
   -
-    name: "something"
-    remove_metric: true # removes the entire metric line from payload, altogether.
+    name: "queue.size"
+    remove_metric: false # does not remove the entire metric line from payload (default: false).
     remove_tags: # removes tags from the respective metric line in the payload.
       - "foo_bar:false"
-      - "status_code:200"
-    remove_host: true # removes host from the respective metric line in the payload.
-
-
-no_host_tags: true
-
-port: 9000 # port to dogstatsd-sift on
+      - "name:auditworker"
+    remove_host: true # removes host from the respective metric line in the payload (default: false).
