@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/shayonj/dogstatsd-sift/configuration"
 	"github.com/sirupsen/logrus"
 )
 
@@ -47,7 +48,7 @@ type RequestSeriesPayload struct {
 // HandleRequest works on an http request to decode (from deflate), parse,
 // modify and then encode back request in the way it was received, with the
 // modified values, so it can be proxied back to the origin.
-func HandleRequest(r *http.Request, log *logrus.Entry) {
+func HandleRequest(r *http.Request, log *logrus.Entry, cfg *configuration.Base) {
 	if r.URL.Path != OriginAPIEndpoint {
 		return
 	}
@@ -57,14 +58,12 @@ func HandleRequest(r *http.Request, log *logrus.Entry) {
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		panic(err)
-
 		log.Error(err)
+		return
 	}
 
 	enflatedPayload, err := deflate(body)
 	if err != nil {
-		panic(err)
 		log.Error(err)
 		return
 	}
@@ -72,15 +71,11 @@ func HandleRequest(r *http.Request, log *logrus.Entry) {
 	var reqPayload RequestSeriesPayload
 	if err := mutate(&enflatedPayload, &reqPayload); err != nil {
 		log.Error(err)
-		panic(err)
-
 		return
 	}
 
 	innflatedPayload, err := inflate(&reqPayload)
 	if err != nil {
-		panic(err)
-
 		log.Error(err)
 		return
 	}

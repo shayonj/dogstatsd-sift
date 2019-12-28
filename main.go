@@ -91,13 +91,13 @@ func main() {
 	log.Fatal(http.ListenAndServe(portOn, nil))
 }
 
-func handler(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
+func handler(p *httputil.ReverseProxy, cfg *configuration.Base) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		requestLogger := log.WithFields(logFields(r))
 		requestLogger.Info("request received")
 
-		datadog.HandleRequest(r, requestLogger)
+		datadog.HandleRequest(r, requestLogger, cfg)
 		defer r.Body.Close()
 
 		p.ServeHTTP(w, r)
